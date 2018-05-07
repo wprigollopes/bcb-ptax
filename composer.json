@@ -1,0 +1,22 @@
+{
+    "name": "code2b/bcb-ptax",
+    "description": "API to communicate with Banco Central do Brasil to get currency PTAX based on day",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "William Prigol Lopes",
+            "email": "william@code2b.com.br"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.3.0",
+	"curl/curl": "*"
+    },
+    "autoload": {
+        "psr-0": {
+            "bcbPTAX": "src/"
+        }
+    }
+}
