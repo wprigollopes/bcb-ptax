@@ -1,9 +1,13 @@
 # bcb-ptax composer package
 
-A simple composer package to connect on "Banco Central do Brasil" public API and returns currency cotation based on an specific day and specific currency
+A simple composer package to connect on "Banco Central do Brasil" public API and returns a cotation cotation based on an specific day and currency.
 
 How to install
 --------------
+
+```
+composer require wprigollopes/bcb-ptax
+```
 
 How to use
 ----------
