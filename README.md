@@ -1,6 +1,6 @@
 # bcb-ptax composer package
 
-A simple composer package to connect on "Banco Central do Brasil" public API and returns a cotation from BRL to a specific day and currency.
+A simple composer package to connect on "Banco Central do Brasil" public API and returns a cotation from BRL to a specific day and currency using Curl
 
 How to install
 --------------
