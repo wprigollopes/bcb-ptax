@@ -19,14 +19,22 @@ class CurrencyTest extends TestCase
         $this->assertSame('EUR', Currency::EUR->value);
     }
 
-    public function test_xau_exists(): void
+    public function test_jpy_exists(): void
     {
-        $this->assertSame('XAU', Currency::XAU->value);
+        $this->assertSame('JPY', Currency::JPY->value);
     }
 
     public function test_total_currency_count(): void
     {
-        $this->assertCount(156, Currency::cases());
+        $this->assertCount(10, Currency::cases());
+    }
+
+    public function test_all_currencies_match_bcb_api(): void
+    {
+        $expected = ['AUD', 'CAD', 'CHF', 'DKK', 'EUR', 'GBP', 'JPY', 'NOK', 'SEK', 'USD'];
+        $actual = array_map(fn(Currency $c) => $c->value, Currency::cases());
+        sort($actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function test_try_from_valid(): void
