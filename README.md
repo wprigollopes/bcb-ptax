@@ -1,28 +1,170 @@
-# bcb-ptax composer package
+# BCB PTAX
 
-A simple composer package to connect on "Banco Central do Brasil" public API and returns a cotation from BRL to a specific day and currency using Curl
+A PHP library to fetch daily PTAX exchange rates from Banco Central do Brasil's public API.
 
-How to install
---------------
+## Background
 
-```
+This project was born out of a real operational need at a Brazilian import company. Every business day, the company needed the official PTAX closing rate to price imports, settle invoices, and comply with Brazilian customs regulations. What started as a quick utility script grew into a Composer package shared with the community.
+
+In 2026, the library was modernized with the help of [Claude Code](https://claude.ai/claude-code) — rewritten from the ground up with PHP 8.1+ features, proper type safety, full test coverage, and i18n support while keeping the same simple API.
+
+## Requirements
+
+- PHP 8.1 or higher
+- Composer
+
+## Installation
+
+```bash
 composer require wprigollopes/bcb-ptax
 ```
 
-How to use
-----------
+## Usage
 
-You can call `use bcbPTAX\PTAX` and call statically `PTAX::getPTAX(<currency>, <date>, <dateFormat>)` passing the currency (1), date (2) and date format (3) parameters. As the API is located on "Banco Central do Brazil", all quotations are converted from "BRL" to `<currency>`.
+### Basic example
 
+```php
+use BcbPtax\PTAX;
+use BcbPtax\Currency;
+
+$ptax = new PTAX();
+$result = $ptax->get(Currency::USD, new \DateTime('2024-01-15'));
+
+echo $result->buyRate;      // 4.8759 (cotacaoCompra)
+echo $result->sellRate;     // 4.8765 (cotacaoVenda)
+echo $result->bulletinType; // "Fechamento PTAX"
+echo $result->date->format('Y-m-d'); // "2024-01-15"
 ```
-use bcbPTAX\PTAX;
-$return = PTAX::getPTAX('USD', '2018-04-23', 'Y-m-d');
+
+### Custom HTTP client
+
+If you need to configure timeouts, proxies, or other HTTP options, pass your own Guzzle client:
+
+```php
+use BcbPtax\PTAX;
+use BcbPtax\Currency;
+use GuzzleHttp\Client;
+
+$ptax = new PTAX(
+    client: new Client(['timeout' => 10]),
+);
+
+$result = $ptax->get(Currency::EUR, new \DateTime('2024-06-20'));
 ```
 
-This will extract the currency quotation on specified day.
+### Portuguese error messages
 
-Currencies supported (ISO 4217 pattern) - More info in https://en.wikipedia.org/wiki/ISO_4217: 
+Exception messages default to English (`en_US`). To get messages in Portuguese:
 
-`['AFN', 'ETB', 'THB', 'PAB', 'VEF', 'BOB', 'GHS', 'CRC', 'SVC', 'NIO', 'DKK', 'ISK', 'NOK', 'SEK', 'CZK', 'GMD', 'DZD', 'KWD', 'BHD', 'IQD', 'JOD', 'LYD', 'MKD', 'RSD', 'SDG', 'TND', 'SSP', 'SDR', 'MAD', 'AED', 'STD', 'AUD', 'BSD', 'BMD', 'CAD', 'GYD', 'NAD', 'BBD', 'BZD', 'BND', 'KYD', 'SGD', 'CLF', 'FJD', 'HKD', 'TTD', 'XCD', 'USD', 'JMD', 'LRD', 'NZD', 'SBD', 'SRD', 'VND', 'AMD', 'CVE', 'ANG', 'AWG', 'HUF', 'CDF', 'BIF', 'KMF', 'XAF', 'XOF', 'XPF', 'DJF', 'GNF', 'MGA', 'RWF', 'CHF', 'HTG', 'PYG', 'UAH', 'JPY', 'GEL', 'ALL', 'HNL', 'SLL', 'MDL', 'RON', 'BGN', 'GIP', 'EGP', 'GBP', 'FKP', 'LBP', 'SHP', 'SYP', 'SZL', 'LSL', 'TMT', 'MZN', 'ERN', 'NGN', 'AOA', 'TWD', 'TRY', 'PEN', 'BTN', 'MRO', 'MRU', 'TOP', 'MOP', 'ARS', 'CLP', 'COP', 'CUP', 'DOP', 'PHP', 'MXN', 'UYU', 'BWP', 'MWK', 'ZMW', 'GTQ', 'MMK', 'PGK', 'HRK', 'LAK', 'ZAR', 'CNY', 'CNH', 'QAR', 'OMR', 'YER', 'IRR', 'SAR', 'KHR', 'MYR', 'RUB', 'BYN', 'TJS', 'MUR', 'NPR', 'SCR', 'LKR', 'INR', 'IDR', 'MVR', 'PKR', 'ILS', 'KGS', 'UZS', 'BDT', 'WST', 'KZT', 'MNT', 'VUV', 'KRW', 'TZS', 'KES', 'UGX', 'SOS', 'PLN', 'EUR', 'XAU']`
+```php
+$ptax = new PTAX(locale: 'pt_BR');
 
-Please, feel free to suggest changes!
+// Throws: "Nenhum PTAX de fechamento encontrado para USD em 01-01-2024"
+$ptax->get(Currency::USD, new \DateTime('2024-01-01')); // Holiday, no PTAX
+```
+
+### Handling errors
+
+```php
+use BcbPtax\PTAX;
+use BcbPtax\Currency;
+use BcbPtax\Exception\ApiException;
+
+$ptax = new PTAX();
+
+try {
+    $result = $ptax->get(Currency::USD, new \DateTime('2024-01-15'));
+    echo "Buy rate: {$result->buyRate}";
+} catch (ApiException $e) {
+    // API returned an error, no data for that date, or malformed response
+    echo "Error: {$e->getMessage()}";
+}
+```
+
+### Working with user input
+
+The `Currency` enum provides safe parsing from strings:
+
+```php
+use BcbPtax\Currency;
+
+$input = 'USD';
+$currency = Currency::tryFrom($input);
+
+if ($currency === null) {
+    echo "Unsupported currency: {$input}";
+    return;
+}
+
+$result = $ptax->get($currency, new \DateTime('today'));
+```
+
+## Supported Currencies
+
+The BCB PTAX service provides daily closing rates for the following currencies against BRL:
+
+| Code | Currency |
+|------|----------|
+| AUD  | Australian Dollar |
+| CAD  | Canadian Dollar |
+| CHF  | Swiss Franc |
+| DKK  | Danish Krone |
+| EUR  | Euro |
+| GBP  | British Pound |
+| JPY  | Japanese Yen |
+| NOK  | Norwegian Krone |
+| SEK  | Swedish Krona |
+| USD  | US Dollar |
+
+Source: [BCB PTAX Moedas endpoint](https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json)
+
+## API Reference
+
+### `PTAX`
+
+```php
+new PTAX(
+    ?ClientInterface $client = null, // Custom Guzzle client (optional)
+    string $locale = 'en_US',        // 'en_US' or 'pt_BR'
+)
+```
+
+#### `get(Currency $currency, DateTimeInterface $date): PTAXResult`
+
+Fetches the closing PTAX rate for the given currency and date. Throws `ApiException` if the API returns an error, the response is malformed, or no closing PTAX exists for that date (weekends, holidays).
+
+### `PTAXResult`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `buyRate` | `float` | Purchase rate (cotacaoCompra) |
+| `sellRate` | `float` | Selling rate (cotacaoVenda) |
+| `date` | `DateTimeImmutable` | Quotation timestamp |
+| `bulletinType` | `string` | Bulletin type (always "Fechamento PTAX") |
+
+### `Currency`
+
+PHP 8.1 string-backed enum with all 10 supported currency codes. Use `Currency::tryFrom('USD')` for safe parsing from user input.
+
+## Development
+
+```bash
+# Install dependencies
+composer install
+
+# Run unit tests
+vendor/bin/phpunit --exclude-group integration
+
+# Run integration tests (calls real BCB API)
+vendor/bin/phpunit --group integration
+
+# Static analysis
+vendor/bin/phpstan analyse src/ --level=max
+
+# Code modernization checks
+vendor/bin/rector --dry-run
+```
+
+## License
+
+[MIT](LICENSE)
