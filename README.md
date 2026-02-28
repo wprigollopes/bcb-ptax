@@ -86,6 +86,7 @@ try {
 The `Currency` enum provides safe parsing from strings:
 
 ```php
+use BcbPtax\PTAX;
 use BcbPtax\Currency;
 
 $input = 'USD';
@@ -96,7 +97,8 @@ if ($currency === null) {
     return;
 }
 
-$result = $ptax->get($currency, new \DateTime('today'));
+$ptax = new PTAX();
+$result = $ptax->get($currency, new \DateTime('2024-01-15'));
 ```
 
 ## Supported Currencies
@@ -124,8 +126,8 @@ Source: [BCB PTAX Moedas endpoint](https://olinda.bcb.gov.br/olinda/servico/PTAX
 
 ```php
 new PTAX(
-    ?ClientInterface $client = null, // Custom Guzzle client (optional)
-    string $locale = 'en_US',        // 'en_US' or 'pt_BR'
+    ClientInterface $client = new Client(), // Custom Guzzle client (optional)
+    string $locale = 'en_US',               // 'en_US' or 'pt_BR'
 )
 ```
 
