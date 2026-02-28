@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace BcbPtax;
 
+/**
+ * @phpstan-type ApiQuotation object{cotacaoCompra: float, cotacaoVenda: float, dataHoraCotacao: string, tipoBoletim: string}
+ */
 class PTAXResult
 {
     public function __construct(
@@ -13,6 +16,7 @@ class PTAXResult
         public readonly string $bulletinType,
     ) {}
 
+    /** @param ApiQuotation $data */
     public static function fromApiResponse(object $data): self
     {
         return new self(

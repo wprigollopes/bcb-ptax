@@ -6,8 +6,10 @@ namespace BcbPtax\I18n;
 
 class Messages
 {
+    /** @var array<string, array<string, string>> */
     private static array $cache = [];
 
+    /** @param array<string, string> $params */
     public static function get(string $key, string $locale, array $params = []): string
     {
         $messages = self::load($locale);
@@ -19,12 +21,13 @@ class Messages
         $message = $messages[$key] ?? $key;
 
         foreach ($params as $placeholder => $value) {
-            $message = str_replace(':' . $placeholder, (string) $value, $message);
+            $message = str_replace(':' . $placeholder, $value, $message);
         }
 
         return $message;
     }
 
+    /** @return array<string, string> */
     private static function load(string $locale): array
     {
         if (isset(self::$cache[$locale])) {
@@ -38,7 +41,9 @@ class Messages
             $locale = 'en_US';
         }
 
-        self::$cache[$locale] = require $file;
+        /** @var array<string, string> $data */
+        $data = require $file;
+        self::$cache[$locale] = $data;
 
         return self::$cache[$locale];
     }

@@ -12,15 +12,8 @@ class PTAX
 {
     private const BASE_URL = 'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata';
 
-    private ClientInterface $client;
-    private string $locale;
-
-    public function __construct(
-        ?ClientInterface $client = null,
-        string $locale = 'en_US',
-    ) {
-        $this->client = $client ?? new Client();
-        $this->locale = $locale;
+    public function __construct(private readonly ClientInterface $client = new Client(), private readonly string $locale = 'en_US')
+    {
     }
 
     public function get(Currency $currency, \DateTimeInterface $date): PTAXResult
@@ -54,7 +47,10 @@ class PTAX
             throw ApiException::jsonError($this->locale);
         }
 
-        foreach ($data->value as $quotation) {
+        /** @var list<object{cotacaoCompra: float, cotacaoVenda: float, dataHoraCotacao: string, tipoBoletim: string}> $values */
+        $values = $data->value;
+
+        foreach ($values as $quotation) {
             if ($quotation->tipoBoletim === 'Fechamento PTAX') {
                 return PTAXResult::fromApiResponse($quotation);
             }
